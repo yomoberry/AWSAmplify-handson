@@ -10,27 +10,37 @@
 import API, {  graphqlOperation } from '@aws-amplify/api';
 // eslint-disable-next-line
 import { createTodo } from "./graphql/mutations";
-import { listTodos } from './graphql/queries'
+import { listTodos } from './graphql/queries';
+import { onCreateTodo } from './graphql/subscriptions';
 window.LOG_LEVEL = 'VERBOSE';
 export default {
-    name: 'app',
-    data(){
-        return {
-            todos: []
-        }
-    },
-    methods :{
-        async createNewTodo(){
-            const todo = { name: "Todo Title" , description: "あれをやる" + Date()}
-            await API.graphql(graphqlOperation(createTodo, { input: todo }))
-        },
-        async getData(){
-            const todoData = await API.graphql(graphqlOperation(listTodos))
-            this.todos.push(...this.todos, ...todoData.data.listTodos.items);
-        }
-    },
-    created(){
-        this.getData()
+  name: 'app',
+  data(){
+    return {
+      todos: []
     }
+  },
+  methods :{
+    async createNewTodo(){
+      const todo = { name: "Todo Title" , description: "あれをやる" + Date()}
+      await API.graphql(graphqlOperation(createTodo, { input: todo }))
+    },
+    async getData(){
+      const todoData = await API.graphql(graphqlOperation(listTodos))
+      this.todos.push(...this.todos, ...todoData.data.listTodos.items);
+    },
+    subscribe(){
+      API.graphql(graphqlOperation(onCreateTodo)).subscribe({
+        next: (eventData) => {
+          const todo = eventData.value.data.onCreateTodo;
+          this.todos.push(todo);
+        }
+      })
+    }
+  },
+  created(){
+    this.getData()
+    this.subscribe()
+  }
 };
 </script>
